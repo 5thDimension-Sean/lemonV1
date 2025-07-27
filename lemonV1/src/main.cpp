@@ -112,7 +112,6 @@ int a = 0;
 float hue;
 std::string toEject = "blue";
 bool isEjecting = false;
-
 void ejectBallTask(void*) {
     isEjecting = true;
     frIntake.move(127);
@@ -123,9 +122,11 @@ void ejectBallTask(void*) {
     hood.set_value(1);
     while(tpDist.get_distance() >= 200){
         pros::delay(10);
+        //First While loop checks if the ball has entered the distance sensor laser
     }
     while(tpDist.get_distance() <= 150 ) {
         pros::delay(25);
+        //Second While loop checks if the ball has left the distance sensor laser
     }
     hood.set_value(0);
     isEjecting = false;
