@@ -1,6 +1,7 @@
 #include "main.h"
 #include "lemlib/api.hpp"
-#include "pros/apix.h" 
+#include "pros/apix.h"
+#include "liblvgl/lvgl.h"
 
 //DRIVETRAIN. negative = reversed direction
 pros::MotorGroup leftMotors({-11, 12, -13}, pros::MotorGearset::blue);
@@ -79,35 +80,17 @@ lemlib::ExpoDriveCurve steerCurve(
 );
 //CHASSIS
 lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors, &throttleCurve, &steerCurve);
-//INITIALIZATION
-void initialize() {
-    pros::lcd::initialize(); //Init Brain
-    chassis.calibrate(); //Calibration
-    //Thread
-    pros::Task screenTask([&]() {
-        while (true) {
-            /*
-            pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
-            pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
-            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
-            //POSITION OF ROBOT
-            lemlib::telemetrySink()->info("Chassis pose: {}", chassis.getPose());
-            pros::delay(50);
-            */
-        }
-    });
-}
 
-//Runs while Disabled
-void disabled() {}
-//Runs when connected to field controller
-void competition_initialize() {}
-//Pathing for Path.Jerry.io
+// AUTONOMOUS SELECTOR
+typedef struct {
+    const char* name;
+    const char* description;
+    void (*run)();
+} AutonRoutine;
 ASSET(p1Auto_txt); // '.' replaced with "_" to make c++ happy
 ASSET(p2Auto_txt);
 ASSET(p3Auto_txt);
-//Autonomous Mode(15 and 1 minute here)
-void autonomous() {
+void autonOne() { 
     chassis.setBrakeMode(MOTOR_BRAKE_HOLD);
     chassis.setPose(-47, -7, 180);
     //pros::Task task1(ejectBallTask);
@@ -129,6 +112,101 @@ void autonomous() {
     pros::delay(3000);
     tpIntake.move(0);
 
+}
+void autonTwo() { 
+
+}
+void autonThree() {
+
+}
+
+int autonPage = 0;
+AutonRoutine autons[] = {
+    { "Auton 1", "Rush to center and shoot.", autonOne },
+    { "Auton 2", "Slow grab and score left.", autonTwo },
+    { "Auton 3", "Skills run full field.", autonThree }
+};
+const int autonCount = sizeof(autons) / sizeof(autons[0]);
+lv_obj_t* autonTitleLabel;
+lv_obj_t* autonDescLabel;
+
+void updateAutonDisplay() {
+    lv_label_set_text(autonTitleLabel, autons[autonPage].name);
+    lv_label_set_text(autonDescLabel, autons[autonPage].description);
+}
+
+void leftBtnCB(lv_event_t* e) {
+    if (autonPage > 0) {
+        autonPage--;
+        updateAutonDisplay();
+    }
+}
+
+void rightBtnCB(lv_event_t* e) {
+    if (autonPage < autonCount - 1) {
+        autonPage++;
+        updateAutonDisplay();
+    }
+}
+
+void createAutonSelector() {
+    lv_obj_t* screen = lv_screen_active();  // corrected: lv_scr_act(), not lv_screen_active()
+
+    autonTitleLabel = lv_label_create(screen);
+    lv_obj_align(autonTitleLabel, LV_ALIGN_TOP_MID, 0, 10);
+
+    autonDescLabel = lv_label_create(screen);
+    lv_label_set_long_mode(autonDescLabel, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(autonDescLabel, 200);
+    lv_obj_align(autonDescLabel, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_t* leftBtn = lv_button_create(screen);
+    lv_obj_align(leftBtn, LV_ALIGN_LEFT_MID, 10, 0);
+    lv_obj_add_event_cb(leftBtn, leftBtnCB, LV_EVENT_CLICKED, NULL);
+    lv_obj_t* leftLabel = lv_label_create(leftBtn);
+    lv_label_set_text(leftLabel, "<");
+    lv_obj_center(leftLabel);
+
+    lv_obj_t* rightBtn = lv_button_create(screen);
+    lv_obj_align(rightBtn, LV_ALIGN_RIGHT_MID, -10, 0);
+    lv_obj_add_event_cb(rightBtn, rightBtnCB, LV_EVENT_CLICKED, NULL);
+    lv_obj_t* rightLabel = lv_label_create(rightBtn);
+    lv_label_set_text(rightLabel, ">");
+    lv_obj_center(rightLabel);
+
+    updateAutonDisplay();
+}
+
+//INITIALIZATION
+void initialize() {
+    lv_init();
+    createAutonSelector();
+    //pros::lcd::initialize(); //Init Brain
+    chassis.calibrate(); //Calibration
+    //Thread
+    pros::Task screenTask([&]() {
+        while (true) {
+            /*
+            pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
+            pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
+            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+            //POSITION OF ROBOT
+            lemlib::telemetrySink()->info("Chassis pose: {}", chassis.getPose());
+            pros::delay(50);
+            */
+        }
+    });
+}
+
+//Runs while Disabled
+void disabled() {}
+//Runs when connected to field controller
+void competition_initialize() {}
+//Pathing for Path.Jerry.io
+
+//Autonomous Mode(15 and 1 minute here)
+void autonomous() {
+    autons[autonPage].run();
 }
 //VARIABLES
 int a = 0;
