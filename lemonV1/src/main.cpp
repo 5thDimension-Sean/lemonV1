@@ -1,5 +1,6 @@
 #include "main.h"
 #include "lemlib/api.hpp"
+#include "pros/apix.h" 
 
 //DRIVETRAIN. negative = reversed direction
 pros::MotorGroup leftMotors({-11, 12, -13}, pros::MotorGearset::blue);
@@ -22,34 +23,34 @@ pros::adi::DigitalOut hood('E');
 pros::Rotation horizontalEnc(10);
 pros::Rotation verticalEnc(8);
 //Finding offsets -4.75 inches from the line of symetry parallel to the wheel
-lemlib::TrackingWheel horizontal(&horizontalEnc, lemlib::Omniwheel::NEW_2, -4.75);
-lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, -0.5);
+lemlib::TrackingWheel horizontal(&horizontalEnc, lemlib::Omniwheel::NEW_2, 6.975);
+lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, -0.01);
 //DT CONFIGURATION
 lemlib::Drivetrain drivetrain(
     &leftMotors, //Drivetrain
     &rightMotors,
-    15, //wideness
+    12.5, //wideness
     lemlib::Omniwheel::NEW_325, //Wheel Size
     450, //Drivetrain RPM
     8 //2 = Omni. 8 = Traction
 );
 //PID
 lemlib::ControllerSettings linearController(
-    8.5, // proportional gain (kP)
+    7.5, // proportional gain (kP)
     0.01, // integral gain (kI)
-    9, // derivative gain (kD)
+    11, // derivative gain (kD)
     3, // anti windup
     0.5, // small error range, in inches
     150, // small error range timeout, in milliseconds
     3.5, // large error range, in inches
     500, // large error range timeout, in milliseconds
-    15 // maximum acceleration (slew)
+    20 // maximum acceleration (slew)
 );
 //TURN PID
 lemlib::ControllerSettings angularController(
-    1.8,   // kP (less aggressive)
+    1.9,   // kP (less aggressive)
     0,     // kI (leave off unless drift over time)
-    11.5,    // kD (more damping)
+    11,    // kD (more damping)
     3,     // anti-windup
     2,     // small error (deg)
     150,   // small timeout (ms)
@@ -85,12 +86,14 @@ void initialize() {
     //Thread
     pros::Task screenTask([&]() {
         while (true) {
+            /*
             pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
             pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
             pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
             //POSITION OF ROBOT
             lemlib::telemetrySink()->info("Chassis pose: {}", chassis.getPose());
             pros::delay(50);
+            */
         }
     });
 }
@@ -100,17 +103,38 @@ void disabled() {}
 //Runs when connected to field controller
 void competition_initialize() {}
 //Pathing for Path.Jerry.io
-ASSET(test2_txt); // '.' replaced with "_" to make c++ happy
+ASSET(p1Auto_txt); // '.' replaced with "_" to make c++ happy
+ASSET(p2Auto_txt);
+ASSET(p3Auto_txt);
 //Autonomous Mode(15 and 1 minute here)
 void autonomous() {
-   chassis.setPose(0, 0, 0);
-   chassis.moveToPose(0, 24, 0, 10000);
+    chassis.setBrakeMode(MOTOR_BRAKE_HOLD);
+    chassis.setPose(-47, -7, 180);
+    //pros::Task task1(ejectBallTask);
+    frIntake.move(127); 
+    bkIntake.move(127); 
+    indexer.move(127);
+    chassis.follow(p1Auto_txt, 20, 1000);
+    chassis.turnToHeading(270, 2000);
+    lwMech.set_value(1);
+    chassis.follow(p2Auto_txt, 15, 1000);
+    pros::delay(1200);
+    chassis.moveToPoint(-45.284, -47.5, 1000, {.forwards = false});
+    lwMech.set_value(0);
+    chassis.turnToHeading(90, 1500);
+    chassis.follow(p3Auto_txt, 5, 750);
+    bkIntake.move(-127); 
+    indexer.move(-127);
+    tpIntake.move(127);
+    pros::delay(3000);
+    tpIntake.move(0);
+
 }
 //VARIABLES
 int a = 0;
 //Color Sort
 float hue;
-std::string toEject = "blue";
+std::string toEject = "red";
 bool isEjecting = false;
 void ejectBallTask(void*) {
     isEjecting = true;
@@ -128,18 +152,21 @@ void ejectBallTask(void*) {
         pros::delay(25);
         //Second While loop checks if the ball has left the distance sensor laser
     }
+    pros::delay(300);
     hood.set_value(0);
     isEjecting = false;
 }
 
 //Driver Control
 void opcontrol() {
+    chassis.setPose(0, 0, 0);
     // controller
     // loop to continuously update motors
     while (true) {
+        chassis.setBrakeMode(MOTOR_BRAKE_COAST);
         hue = color.get_hue();
         if (controller.get_digital(DIGITAL_A) && controller.get_digital(DIGITAL_LEFT)) {
-        autonomous();
+            autonomous();
       }
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
         int rightX = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
@@ -154,6 +181,7 @@ void opcontrol() {
         }else if(controller.get_digital(DIGITAL_R2)){
             frIntake.move(-127);
             bkIntake.move(-127);
+            indexer.move(-127);
             color.set_led_pwm(0);
         }else if(controller.get_digital(DIGITAL_L2)){
             color.set_led_pwm(100);
@@ -170,9 +198,9 @@ void opcontrol() {
             indexer.move(-127);
             tpIntake.move(127);
             if (!isEjecting) {
-                if ((toEject == "red" && ((hue >= 340 && hue <= 359) || (hue >= 0 && hue <= 20))) ||
-                    (toEject == "blue" && (hue >= 200 && hue <= 240))) {
-                    pros::Task task1(ejectBallTask);
+                if ((toEject == "red" && ((hue >= 340 && hue <= 359) || (hue >= 0 && hue <= 20)))){
+                // || (toEject == "blue" && (hue >= 200 && hue <= 240))) 
+                    //pros::Task task1(ejectBallTask);
                 }
             }
         }else{
