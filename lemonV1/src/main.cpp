@@ -81,19 +81,57 @@ lemlib::ExpoDriveCurve steerCurve(
 //CHASSIS
 lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors, &throttleCurve, &steerCurve);
 
+
+//VARIABLES
+int a = 0;
+//Color Sort
+float hue;
+std::string toEject = "red";
+bool isEjecting = false;
+void ejectBallTask(void*) {
+    isEjecting = true;
+    frIntake.move(127);
+    bkIntake.move(-127);
+    indexer.move(-127);
+    tpIntake.move(127);
+    pros::delay(75);
+    hood.set_value(1);
+    while(tpDist.get_distance() >= 200){
+        pros::delay(10);
+        //First While loop checks if the ball has entered the distance sensor laser
+    }
+    while(tpDist.get_distance() <= 150 ) {
+        pros::delay(25);
+        //Second While loop checks if the ball has left the distance sensor laser
+    }
+    pros::delay(300);
+    hood.set_value(0);
+    isEjecting = false;
+}
+
+
 // AUTONOMOUS SELECTOR
 typedef struct {
     const char* name;
     const char* description;
     void (*run)();
 } AutonRoutine;
+
 ASSET(p1Auto_txt); // '.' replaced with "_" to make c++ happy
 ASSET(p2Auto_txt);
 ASSET(p3Auto_txt);
-void autonOne() { 
+ASSET(p4Auto_txt);
+
+ASSET(p1AutoL_txt);
+ASSET(p2AutoL_txt);
+ASSET(p3AutoL_txt);
+ASSET(p4AutoL_txt);
+
+void rRCode() { 
     chassis.setBrakeMode(MOTOR_BRAKE_HOLD);
-    chassis.setPose(-47, -7, 180);
-    //pros::Task task1(ejectBallTask);
+    chassis.setPose(-45.284, -7.984, 180);
+    toEject = "blue";
+    pros::Task task1(ejectBallTask);
     frIntake.move(127); 
     bkIntake.move(127); 
     indexer.move(127);
@@ -111,20 +149,74 @@ void autonOne() {
     tpIntake.move(127);
     pros::delay(3000);
     tpIntake.move(0);
-
+    chassis.moveToPose(-45.808, -47.5, 90, 1000, {.forwards = false});
+    chassis.turnToHeading(45, 1500);
+    bkIntake.move(127);
+    indexer.move(127);
+    chassis.follow(p4Auto_txt, 20, 4000); 
+    pros::delay(1000);
+    bkIntake.move(-127);
+    frIntake.move(-87); //tune
+    indexer. move(-127);
+    pros::delay(3500);
+    chassis.moveToPoint(-45.284, -47.5, 1000, {.forwards = false});
 }
-void autonTwo() { 
-
+void rLCode() { 
+    chassis.setBrakeMode(MOTOR_BRAKE_HOLD);
+    chassis.setPose(-45.284, -7.984, 0);
+    toEject = "blue";
+    pros::Task task1(ejectBallTask);
+    frIntake.move(127); 
+    bkIntake.move(127); 
+    indexer.move(127);
+    chassis.follow(p1AutoL_txt, 20, 1000);
+    chassis.turnToHeading(270, 2000);
+    lwMech.set_value(1);
+    chassis.follow(p2AutoL_txt, 15, 1000);
+    pros::delay(1200);
+    chassis.moveToPoint(-45.284, 47.5, 1000, {.forwards = false});
+    lwMech.set_value(0);
+    chassis.turnToHeading(90, 1500);
+    chassis.follow(p3AutoL_txt, 5, 750);
+    bkIntake.move(-127); 
+    indexer.move(-127);
+    tpIntake.move(127);
+    pros::delay(3000);
+    tpIntake.move(0);
+    chassis.moveToPose(-45.808, 47.5, 90, 1000, {.forwards = false});
+    chassis.turnToHeading(135, 1500);
+    bkIntake.move(127);
+    indexer.move(127);
+    chassis.follow(p4AutoL_txt, 20, 4000); 
+    pros::delay(1000);
+    bkIntake.move(-127);
+    frIntake.move(-87); //tune
+    indexer. move(-127);
+    pros::delay(3500);
+    chassis.moveToPoint(-45.284, -47.5, 1000, {.forwards = false});
 }
 void autonThree() {
 
 }
+void bRCode(){
+    toEject = "red";
+    rRCode();
+    //Debug
+}
+
+void bLCode(){
+    toEject = "red";
+    rLCode();
+    //Debug
+}
 
 int autonPage = 0;
 AutonRoutine autons[] = {
-    { "Auton 1", "Rush to center and shoot.", autonOne },
-    { "Auton 2", "Slow grab and score left.", autonTwo },
-    { "Auton 3", "Skills run full field.", autonThree }
+    { "Auton 1", "Red Right Auton. Scores 4 Top 3 Bottom", rRCode},
+    { "Auton 2", "Red Left Auton. Scores 4 Top 3 Bottom", rLCode},
+    { "Auton 3", "Skills WIP", autonThree }, 
+    {"Auton 4", "Blue Right Auton. Scores 4 Top 3 Bottom, "}, 
+    {"Auton 5", "Blue Left Auton. Scores 4 Top 3 Bottom", }, 
 };
 const int autonCount = sizeof(autons) / sizeof(autons[0]);
 lv_obj_t* autonTitleLabel;
@@ -179,6 +271,7 @@ void createAutonSelector() {
 
 //INITIALIZATION
 void initialize() {
+    //add pros::lcd::initialize(); if lv_init does not work
     lv_init();
     createAutonSelector();
     //pros::lcd::initialize(); //Init Brain
@@ -208,33 +301,6 @@ void competition_initialize() {}
 void autonomous() {
     autons[autonPage].run();
 }
-//VARIABLES
-int a = 0;
-//Color Sort
-float hue;
-std::string toEject = "red";
-bool isEjecting = false;
-void ejectBallTask(void*) {
-    isEjecting = true;
-    frIntake.move(127);
-    bkIntake.move(-127);
-    indexer.move(-127);
-    tpIntake.move(127);
-    pros::delay(75);
-    hood.set_value(1);
-    while(tpDist.get_distance() >= 200){
-        pros::delay(10);
-        //First While loop checks if the ball has entered the distance sensor laser
-    }
-    while(tpDist.get_distance() <= 150 ) {
-        pros::delay(25);
-        //Second While loop checks if the ball has left the distance sensor laser
-    }
-    pros::delay(300);
-    hood.set_value(0);
-    isEjecting = false;
-}
-
 //Driver Control
 void opcontrol() {
     chassis.setPose(0, 0, 0);
@@ -252,6 +318,7 @@ void opcontrol() {
         chassis.arcade(leftY, rightX);
         //Entire Intake/Outtake Sequence with color sort
         if(controller.get_digital(DIGITAL_R1)){
+            toEject = "red";
             frIntake.move(127);
             bkIntake.move(127);
             indexer.move(127);
