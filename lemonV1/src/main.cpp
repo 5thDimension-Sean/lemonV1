@@ -3,6 +3,8 @@
 #include "pros/apix.h"
 #include "liblvgl/lvgl.h"
 
+
+
 //DRIVETRAIN. negative = reversed direction
 pros::MotorGroup leftMotors({-11, 12, -13}, pros::MotorGearset::blue);
 pros::MotorGroup rightMotors({14, -15, 16}, pros::MotorGearset::blue); 
@@ -119,65 +121,73 @@ typedef struct {
 
 ASSET(p1Auto_txt); // '.' replaced with "_" to make c++ happy
 ASSET(p2Auto_txt);
-ASSET(p3Auto_txt);
 ASSET(p4Auto_txt);
 
 ASSET(p1AutoL_txt);
 ASSET(p2AutoL_txt);
-ASSET(p3AutoL_txt);
 ASSET(p4AutoL_txt);
+
+ASSET(p1AutobR_txt);
+ASSET(p2AutobR_txt);
+ASSET(p4AutobR_txt);
+
+ASSET(p1AutobL_txt);
+ASSET(p2AutobL_txt);
+ASSET(p4AutobL_txt);
+
+ASSET(skill1_txt);
+ASSET(skill2_txt);
+ASSET(skill3_txt);
+ASSET(skill4_txt);
+ASSET(skill5_txt);
 
 void rRCode() { 
     chassis.setBrakeMode(MOTOR_BRAKE_HOLD);
     chassis.setPose(-45.284, -7.984, 180);
-    toEject = "blue";
-    pros::Task task1(ejectBallTask);
     frIntake.move(127); 
     bkIntake.move(127); 
     indexer.move(127);
-    chassis.follow(p1Auto_txt, 20, 1000);
-    chassis.turnToHeading(270, 2000);
+    chassis.follow(p1Auto_txt, 20, 2000);
+    chassis.turnToHeading(270, 2500);
     lwMech.set_value(1);
     chassis.follow(p2Auto_txt, 15, 1000);
     pros::delay(1200);
     chassis.moveToPoint(-45.284, -47.5, 1000, {.forwards = false});
     lwMech.set_value(0);
-    chassis.turnToHeading(90, 1500);
-    chassis.follow(p3Auto_txt, 5, 750);
+    chassis.turnToHeading(90, 1000);
+    chassis.moveToPose(-29.75, -48, 90, 1500, {}, false);
     bkIntake.move(-127); 
     indexer.move(-127);
     tpIntake.move(127);
-    pros::delay(3000);
+    pros::delay(3500);
     tpIntake.move(0);
     chassis.moveToPose(-45.808, -47.5, 90, 1000, {.forwards = false});
     chassis.turnToHeading(45, 1500);
     bkIntake.move(127);
     indexer.move(127);
-    chassis.follow(p4Auto_txt, 20, 4000); 
-    pros::delay(1000);
-    bkIntake.move(-127);
+    chassis.follow(p4Auto_txt, 20, 5000, true, false); 
+    chassis.turnToHeading(50, 500, {}, false);
+    bkIntake.move(-50);
     frIntake.move(-87); //tune
     indexer. move(-127);
-    pros::delay(3500);
+    pros::delay(2000);
     chassis.moveToPoint(-45.284, -47.5, 1000, {.forwards = false});
 }
 void rLCode() { 
     chassis.setBrakeMode(MOTOR_BRAKE_HOLD);
-    chassis.setPose(-45.284, -7.984, 0);
-    toEject = "blue";
-    pros::Task task1(ejectBallTask);
+    chassis.setPose(-45.284, 7.984, 0);
     frIntake.move(127); 
     bkIntake.move(127); 
     indexer.move(127);
-    chassis.follow(p1AutoL_txt, 20, 1000);
+    chassis.follow(p1AutoL_txt, 15, 2000);
     chassis.turnToHeading(270, 2000);
     lwMech.set_value(1);
-    chassis.follow(p2AutoL_txt, 15, 1000);
+    chassis.follow(p2AutoL_txt, 20, 1000);
     pros::delay(1200);
     chassis.moveToPoint(-45.284, 47.5, 1000, {.forwards = false});
     lwMech.set_value(0);
     chassis.turnToHeading(90, 1500);
-    chassis.follow(p3AutoL_txt, 5, 750);
+    chassis.moveToPose(-29, 49, 90, 1500, {}, false);
     bkIntake.move(-127); 
     indexer.move(-127);
     tpIntake.move(127);
@@ -187,36 +197,182 @@ void rLCode() {
     chassis.turnToHeading(135, 1500);
     bkIntake.move(127);
     indexer.move(127);
-    chassis.follow(p4AutoL_txt, 20, 4000); 
-    pros::delay(1000);
+    chassis.follow(p4AutoL_txt, 20, 4000, true, false); 
+    chassis.turnToHeading(140, 500);
+    pros::delay(500);
+    bkIntake.move(-127);
+    frIntake.move(87); //tune
+    indexer. move(-127);
+    tpIntake.move(-50);
+    pros::delay(3500);
+    chassis.moveToPoint(-45.284, 47.5, 1000, {.forwards = false});
+}
+void autonThree() {
+    chassis.setBrakeMode(MOTOR_BRAKE_HOLD);
+    chassis.setPose(-45.284, -7.984, 180);
+    frIntake.move(127); 
+    bkIntake.move(127); 
+    indexer.move(127);
+    chassis.follow(skill1_txt, 15, 5000);
+    pros::delay(250);
+    chassis.turnToHeading(272, 2500);
+    lwMech.set_value(1);
+    chassis.follow(skill2_txt, 20, 2000);
+    pros::delay(1500);
+    chassis.turnToHeading(270, 500, {}, false);
+    pros::delay(1500);
+    //first loader
+    chassis.moveToPoint(-45.284, -47.5, 1000, {.forwards = false});
+    lwMech.set_value(0);
+    chassis.turnToHeading(90, 1500);
+    bkIntake.move(0);
+    indexer.move(0);
+    chassis.moveToPose(-29.5, -48, 90, 1500, {}, false);
+    bkIntake.move(-127); 
+    indexer.move(-127);
+    tpIntake.move(127);
+    pros::delay(5000);
+    tpIntake.move(0);
+    chassis.moveToPose(-45.808, -47.5, 90, 1000, {.forwards = false});
+    chassis.turnToHeading(0, 1500);
+    tpIntake.move(-127);
+    chassis.follow(skill3_txt, 25, 5000);
+    chassis.turnToHeading(270, 3000);
+    pros::delay(500);
+    lwMech.set_value(1);
+    //2nd loader
+    bkIntake.move(127); 
+    indexer.move(127);
+    chassis.moveToPose(-68.681, 51, 270, 4000, {}, false);
+    chassis.turnToHeading(270, 500, {}, false);
+    pros::delay(500);
+    chassis.moveToPoint(-45.284, 51.125, 1000, {.forwards = false});
+    lwMech.set_value(0);
+    bkIntake.move(0);
+    indexer.move(0);
+    chassis.turnToHeading(90, 1500);
+    chassis.moveToPose(-33.5, 51.5, 90, 1500, {}, false);
+    bkIntake.move(-127); 
+    indexer.move(-127);
+    tpIntake.move(127);
+    pros::delay(5000);
+    tpIntake.move(0);
+    chassis.moveToPose(-45.808, 51.5, 90, 1000, {.forwards = false});
+    chassis.turnToHeading(35, 1500);
+    chassis.follow(skill4_txt, 20, 5000);
+    bkIntake.move(127); 
+    indexer.move(127);
+    chassis.turnToHeading(90, 2500); 
+    lwMech.set_value(1);
+    //go to loader
+    chassis.moveToPose(67.681, 47.25, 90, 4000, {}, false);
+    pros::delay(2000);
+    //3rd loader
+    chassis.moveToPoint(45.284, 48, 1000, {.forwards = false});
+    lwMech.set_value(0);
+    bkIntake.move(0);
+    indexer.move(0);
+    chassis.turnToHeading(270, 1500);
+    chassis.moveToPose(30.25, 46, 270, 1500, {}, false);
+    bkIntake.move(-127); 
+    indexer.move(-127);
+    tpIntake.move(127);
+    pros::delay(5000);
+    chassis.moveToPoint(45.808, 47.5, 1000, {.forwards = false});
+    chassis.turnToHeading(180, 3000);
+    bkIntake.move(127); 
+    indexer.move(127);
+    /*
+    chassis.follow(skill5_txt, 20, 5000);
+    chassis.turnToHeading(90, 3000);
+    lwMech.set_value(1);
+    //final loader
+    chassis.moveToPose(67.681, -52, 90, 4000);
+    pros::delay(2000);
+    chassis.moveToPose(43.681, -53.25, 90, 4000, {.forwards = false});
+    lwMech.set_value(0);
+    chassis.turnToHeading(270, 4000);
+    chassis.moveToPose(31.5, -53, 270, 1500, {}, false);
+    bkIntake.move(-127); 
+    indexer.move(-127);
+    tpIntake.move(127);
+    pros::delay(5000);
+    */
+}
+void bRCode(){
+    chassis.setBrakeMode(MOTOR_BRAKE_HOLD);
+    chassis.setPose(45.284, 7.984, 0);
+    frIntake.move(127); 
+    bkIntake.move(127); 
+    indexer.move(127);
+    chassis.follow(p1AutobR_txt, 15, 2000);
+    chassis.turnToHeading(90, 2000);
+    lwMech.set_value(1);
+    chassis.follow(p2AutobR_txt, 20, 1000);
+    pros::delay(1200);
+    chassis.moveToPoint(45.284, 47.5, 1000, {.forwards = false});
+    lwMech.set_value(0);
+    chassis.turnToHeading(270, 1500);
+    chassis.moveToPose(29, 49, 270, 1500, {}, false);
+    bkIntake.move(-127); 
+    indexer.move(-127);
+    tpIntake.move(127);
+    pros::delay(3000);
+    tpIntake.move(0);
+    chassis.moveToPose(45.808, 47.5, 270, 1000, {.forwards = false});
+    chassis.turnToHeading(225, 1500);
+    bkIntake.move(127);
+    indexer.move(127);
+    chassis.follow(p4AutobR_txt, 20, 4000, true, false); 
+    chassis.turnToHeading(220, 500);
+    pros::delay(500);
     bkIntake.move(-127);
     frIntake.move(-87); //tune
     indexer. move(-127);
     pros::delay(3500);
-    chassis.moveToPoint(-45.284, -47.5, 1000, {.forwards = false});
+    chassis.moveToPoint(45.284, 47.5, 1000, {.forwards = false});
 }
-void autonThree() {
-
-}
-void bRCode(){
-    toEject = "red";
-    rRCode();
-    //Debug
-}
-
 void bLCode(){
-    toEject = "red";
-    rLCode();
-    //Debug
+    chassis.setBrakeMode(MOTOR_BRAKE_HOLD);
+    chassis.setPose(45.284, -7.984, 180);
+    frIntake.move(127); 
+    bkIntake.move(127); 
+    indexer.move(127);
+    chassis.follow(p1AutobL_txt, 20, 2000);
+    chassis.turnToHeading(90, 2500);
+    lwMech.set_value(1);
+    chassis.follow(p2AutobL_txt, 15, 1000);
+    pros::delay(1200);
+    chassis.moveToPoint(45.284, -47.5, 1000, {.forwards = false});
+    lwMech.set_value(0);
+    chassis.turnToHeading(270, 1000);
+    chassis.moveToPose(29.75, -48.5, 270, 1500, {}, false);
+    bkIntake.move(-127); 
+    indexer.move(-127);
+    tpIntake.move(127);
+    pros::delay(3500);
+    tpIntake.move(0);
+    chassis.moveToPose(45.808, -47.5, 270, 1000, {.forwards = false});
+    chassis.turnToHeading(315, 1500);
+    bkIntake.move(127);
+    indexer.move(127);
+    chassis.follow(p4AutobL_txt, 20, 5000, true, false); 
+    chassis.turnToHeading(315, 500, {}, false);
+    bkIntake.move(-127);
+    frIntake.move(127); //tune
+    indexer.move(-127);
+    tpIntake.move(-80);
+    pros::delay(2000);
+    chassis.moveToPoint(45.284, -47.5, 1000, {.forwards = false});
 }
 
 int autonPage = 0;
 AutonRoutine autons[] = {
-    { "Auton 1", "Red Right Auton. Scores 4 Top 3 Bottom", rRCode},
-    { "Auton 2", "Red Left Auton. Scores 4 Top 3 Bottom", rLCode},
-    { "Auton 3", "Skills WIP", autonThree }, 
-    {"Auton 4", "Blue Right Auton. Scores 4 Top 3 Bottom, "}, 
-    {"Auton 5", "Blue Left Auton. Scores 4 Top 3 Bottom", }, 
+    { "Auton 1", "Red Right Auton. Scores 4 Top 3 Bottom", autonThree},
+    { "Auton 2", "Red Left Auton. Scores 4 Top 3 Middle", rLCode},
+    { "Auton 3", "Skills WIP(44 Max)", autonThree }, 
+    {"Auton 4", "Blue Right Auton. Scores 4 Top 3 Bottom, ", bRCode}, 
+    {"Auton 5", "Blue Left Auton. Scores 4 Top 3 Bottom", bLCode}, 
 };
 const int autonCount = sizeof(autons) / sizeof(autons[0]);
 lv_obj_t* autonTitleLabel;
@@ -228,6 +384,8 @@ void updateAutonDisplay() {
 }
 
 void leftBtnCB(lv_event_t* e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+    // debug feedback
     if (autonPage > 0) {
         autonPage--;
         updateAutonDisplay();
@@ -235,14 +393,17 @@ void leftBtnCB(lv_event_t* e) {
 }
 
 void rightBtnCB(lv_event_t* e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) return;
     if (autonPage < autonCount - 1) {
         autonPage++;
         updateAutonDisplay();
     }
 }
 
+
 void createAutonSelector() {
-    lv_obj_t* screen = lv_screen_active();  // corrected: lv_scr_act(), not lv_screen_active()
+
+    lv_obj_t* screen = lv_screen_active();
 
     autonTitleLabel = lv_label_create(screen);
     lv_obj_align(autonTitleLabel, LV_ALIGN_TOP_MID, 0, 10);
@@ -254,39 +415,35 @@ void createAutonSelector() {
 
     lv_obj_t* leftBtn = lv_button_create(screen);
     lv_obj_align(leftBtn, LV_ALIGN_LEFT_MID, 10, 0);
-    lv_obj_add_event_cb(leftBtn, leftBtnCB, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(leftBtn, leftBtnCB, LV_EVENT_ALL, NULL);
     lv_obj_t* leftLabel = lv_label_create(leftBtn);
     lv_label_set_text(leftLabel, "<");
     lv_obj_center(leftLabel);
 
     lv_obj_t* rightBtn = lv_button_create(screen);
     lv_obj_align(rightBtn, LV_ALIGN_RIGHT_MID, -10, 0);
-    lv_obj_add_event_cb(rightBtn, rightBtnCB, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(rightBtn, rightBtnCB, LV_EVENT_ALL, NULL);
     lv_obj_t* rightLabel = lv_label_create(rightBtn);
     lv_label_set_text(rightLabel, ">");
     lv_obj_center(rightLabel);
-
+    lv_obj_set_size(leftBtn, 50, 50);
+    lv_obj_set_size(rightBtn, 50, 50);
     updateAutonDisplay();
 }
+
+
 
 //INITIALIZATION
 void initialize() {
     //add pros::lcd::initialize(); if lv_init does not work
     lv_init();
     createAutonSelector();
-    //pros::lcd::initialize(); //Init Brain
     chassis.calibrate(); //Calibration
     //Thread
     pros::Task screenTask([&]() {
         while (true) {
-            /*
-            pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
-            pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
-            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
-            //POSITION OF ROBOT
-            lemlib::telemetrySink()->info("Chassis pose: {}", chassis.getPose());
-            pros::delay(50);
-            */
+            lv_timer_handler();  // LVGL processes touch and drawing
+            pros::delay(5);      // Small delay to prevent CPU overload
         }
     });
 }
@@ -318,7 +475,7 @@ void opcontrol() {
         chassis.arcade(leftY, rightX);
         //Entire Intake/Outtake Sequence with color sort
         if(controller.get_digital(DIGITAL_R1)){
-            toEject = "red";
+            //toEject = "red";
             frIntake.move(127);
             bkIntake.move(127);
             indexer.move(127);
