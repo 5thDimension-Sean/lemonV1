@@ -227,7 +227,7 @@ void autonThree() {
     chassis.turnToHeading(90, 1500);
     bkIntake.move(0);
     indexer.move(0);
-    chassis.moveToPose(-29.5, -48, 90, 1500, {}, false);
+    chassis.moveToPose(-29.5, -48.25, 90, 1500, {}, false);
     bkIntake.move(-127); 
     indexer.move(-127);
     tpIntake.move(127);
@@ -273,15 +273,19 @@ void autonThree() {
     bkIntake.move(0);
     indexer.move(0);
     chassis.turnToHeading(270, 1500);
-    chassis.moveToPose(30.25, 46, 270, 1500, {}, false);
+    chassis.moveToPose(30.5, 47, 270, 1500, {}, false);
     bkIntake.move(-127); 
     indexer.move(-127);
     tpIntake.move(127);
     pros::delay(5000);
-    chassis.moveToPoint(45.808, 47.5, 1000, {.forwards = false});
-    chassis.turnToHeading(180, 3000);
+    chassis.moveToPoint(50.808, 47.5, 1000, {.forwards = false});
+    chassis.turnToHeading(160, 3000);
     bkIntake.move(127); 
     indexer.move(127);
+    chassis.moveToPose(57, 24, 180, 3000);
+    chassis.turnToHeading(180, 1000);
+    hood.set_value(1);
+    frIntake.move(-127);
     /*
     chassis.follow(skill5_txt, 20, 5000);
     chassis.turnToHeading(90, 3000);
@@ -370,7 +374,7 @@ int autonPage = 0;
 AutonRoutine autons[] = {
     { "Auton 1", "Red Right Auton. Scores 4 Top 3 Bottom", autonThree},
     { "Auton 2", "Red Left Auton. Scores 4 Top 3 Middle", rLCode},
-    { "Auton 3", "Skills WIP(44 Max)", autonThree }, 
+    { "Auton 3", "Skills WIP(54 Max)", autonThree }, 
     {"Auton 4", "Blue Right Auton. Scores 4 Top 3 Bottom, ", bRCode}, 
     {"Auton 5", "Blue Left Auton. Scores 4 Top 3 Bottom", bLCode}, 
 };
