@@ -15,7 +15,7 @@ pros::Motor indexer(20);
 pros::Optical color(2);
 pros::Imu imu(9);
 pros::Distance tpDist(7);
-//PNEUMATICS
+//PNEUMATICS SETUP
 pros::adi::DigitalOut lwMech('H');
 pros::adi::DigitalOut hood('E');
 //ODOMETRY
