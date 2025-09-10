@@ -19,11 +19,9 @@ pros::Motor indexer(20);
 pros::Optical color(2);
 pros::Imu imu(9);
 pros::Distance tpDist(7);
-pros::Distance frdist(6);
 //PNEUMATICS
 pros::adi::DigitalOut lwMech('H');
 pros::adi::DigitalOut hood('E');
-pros::adi::DigitalOut odomRetract('F');
 //ODOMETRY
 pros::Rotation horizontalEnc(10);
 pros::Rotation verticalEnc(8);
@@ -49,7 +47,7 @@ lemlib::ControllerSettings linearController(
     150, // small error range timeout, in milliseconds
     3.5, // large error range, in inches
     500, // large error range timeout, in milliseconds
-    23 // maximum acceleration (slew)
+    20 // maximum acceleration (slew)
 );
 //TURN PID
 lemlib::ControllerSettings angularController(
@@ -88,8 +86,6 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 
 //VARIABLES
 int a = 0;
-int b = 0;
-int c = 0;
 //Color Sort
 float hue;
 std::string toEject = "red";
@@ -110,47 +106,12 @@ void ejectBallTask(void*) {
         pros::delay(25);
         //Second While loop checks if the ball has left the distance sensor laser
     }
-    pros::delay(100);
+    pros::delay(300);
     hood.set_value(0);
     isEjecting = false;
 }
-bool primeState = false;
-void primestateTask(void*) {
-    primeState = true;
-    color.set_led_pwm(100);
-     while (true) {    
-        bool isTarget = false;
-        if (controller.get_digital(DIGITAL_L1)) { // L1 = kill switch
-            break; // Exit task immediately
-        }
-        if (toEject == "blue" && ((hue >= 340 && hue <= 359) || (hue >= 0 && hue <= 20))) {
-            isTarget = true;
-            //if you want to eject blue and you want to keep the red
-        } 
-        else if (toEject == "red" && (hue >= 200 && hue <= 240)) {
-            isTarget = true;
-        }
 
-        if (isTarget) {
-            isEjecting = true;
-        }
-        if (isTarget) {
-            // Desired color detected -> stop motors and end task
-            frIntake.move(0);
-            bkIntake.move(0);
-            indexer.move(0);
-            tpIntake.move(0);
-            break; // Exit the task loop
-        } else {
-            // Color not yet detected -> keep spinning middle outtake
-            frIntake.move(127);
-            bkIntake.move(-127);
-            indexer.move(-127);
-            tpIntake.move(-127);
-        }
-     }
-     primeState = false;
-}
+
 // AUTONOMOUS SELECTOR
 typedef struct {
     const char* name;
@@ -190,16 +151,15 @@ void rRCode() {
     chassis.turnToHeading(270, 2500);
     lwMech.set_value(1);
     chassis.follow(p2Auto_txt, 15, 1000);
-    tpIntake.move(127);
-    pros::delay(1150);
-    chassis.moveToPoint(-45.284, -47.5, 800, {.forwards = false});
+    pros::delay(1200);
+    chassis.moveToPoint(-45.284, -47.5, 1000, {.forwards = false});
     lwMech.set_value(0);
     chassis.turnToHeading(90, 1000);
-    chassis.moveToPose(-29, -49.2, 90, 1500, {}, false);
+    chassis.moveToPose(-29.75, -48, 90, 1500, {}, false);
     bkIntake.move(-127); 
     indexer.move(-127);
     tpIntake.move(127);
-    pros::delay(3200);
+    pros::delay(3500);
     tpIntake.move(0);
     chassis.moveToPose(-45.808, -47.5, 90, 1000, {.forwards = false});
     chassis.turnToHeading(45, 1500);
@@ -207,10 +167,11 @@ void rRCode() {
     indexer.move(127);
     chassis.follow(p4Auto_txt, 20, 5000, true, false); 
     chassis.turnToHeading(50, 500, {}, false);
-    bkIntake.move(-120);
+    bkIntake.move(-50);
     frIntake.move(-87); //tune
     indexer. move(-127);
     pros::delay(2000);
+    chassis.moveToPoint(-45.284, -47.5, 1000, {.forwards = false});
 }
 void rLCode() { 
     chassis.setBrakeMode(MOTOR_BRAKE_HOLD);
@@ -222,28 +183,27 @@ void rLCode() {
     chassis.turnToHeading(270, 2000);
     lwMech.set_value(1);
     chassis.follow(p2AutoL_txt, 20, 1000);
-    tpIntake.move(127);
-    pros::delay(1150);
+    pros::delay(1200);
     chassis.moveToPoint(-45.284, 47.5, 1000, {.forwards = false});
     lwMech.set_value(0);
-    chassis.turnToHeading(90, 1000);
-    chassis.moveToPose(-28, 49, 90, 1500, {}, false);
+    chassis.turnToHeading(90, 1500);
+    chassis.moveToPose(-29, 49, 90, 1500, {}, false);
     bkIntake.move(-127); 
     indexer.move(-127);
     tpIntake.move(127);
-    pros::delay(3200);
+    pros::delay(3000);
     tpIntake.move(0);
-    chassis.moveToPoint(-45.808, 47.5, 1000, {.forwards = false}, false);
-    chassis.turnToHeading(135, 700);
+    chassis.moveToPose(-45.808, 47.5, 90, 1000, {.forwards = false});
+    chassis.turnToHeading(135, 1500);
     bkIntake.move(127);
     indexer.move(127);
     chassis.follow(p4AutoL_txt, 20, 4000, true, false); 
-    chassis.turnToHeading(135, 500);
+    chassis.turnToHeading(140, 500);
     pros::delay(500);
     bkIntake.move(-127);
-    frIntake.move(127); //tune
+    frIntake.move(87); //tune
     indexer. move(-127);
-    tpIntake.move(-70);
+    tpIntake.move(-50);
     pros::delay(3500);
     chassis.moveToPoint(-45.284, 47.5, 1000, {.forwards = false});
 }
@@ -253,29 +213,21 @@ void autonThree() {
     frIntake.move(127); 
     bkIntake.move(127); 
     indexer.move(127);
-    chassis.follow(skill1_txt, 15, 5000, true, false);
-    int tardi = 500;
-    while(frdist.get_distance() > tardi) 
-    {
-        int kp = 0.3;
-        leftMotors.move(10 + kp*(frdist.get_distance() - tardi));
-        rightMotors.move(10 + kp*(frdist.get_distance() - tardi));
-    }
+    chassis.follow(skill1_txt, 15, 5000);
     pros::delay(250);
     chassis.turnToHeading(272, 2500);
     lwMech.set_value(1);
     chassis.follow(skill2_txt, 20, 2000);
-    tpIntake.move(-127);
     pros::delay(1500);
     chassis.turnToHeading(270, 500, {}, false);
     pros::delay(1500);
     //first loader
-    chassis.moveToPoint(-45.284, -48.8, 1000, {.forwards = false});
+    chassis.moveToPoint(-45.284, -47.5, 1000, {.forwards = false});
     lwMech.set_value(0);
     chassis.turnToHeading(90, 1500);
     bkIntake.move(0);
     indexer.move(0);
-    chassis.moveToPose(-29.5, -49.2, 90, 1500, {}, false);
+    chassis.moveToPose(-29.5, -48.25, 90, 1500, {}, false);
     bkIntake.move(-127); 
     indexer.move(-127);
     tpIntake.move(127);
@@ -285,28 +237,27 @@ void autonThree() {
     chassis.turnToHeading(0, 1500);
     tpIntake.move(-127);
     chassis.follow(skill3_txt, 25, 5000);
-    chassis.turnToHeading(0, 600);
     chassis.turnToHeading(270, 3000);
     pros::delay(500);
     lwMech.set_value(1);
     //2nd loader
     bkIntake.move(127); 
     indexer.move(127);
-    chassis.moveToPose(-68.681, 50.1, 270, 4000, {}, false);
+    chassis.moveToPose(-68.681, 51, 270, 4000, {}, false);
     chassis.turnToHeading(270, 500, {}, false);
     pros::delay(500);
-    chassis.moveToPoint(-45.284, 52.125, 1000, {.forwards = false});
+    chassis.moveToPoint(-45.284, 51.125, 1000, {.forwards = false});
     lwMech.set_value(0);
     bkIntake.move(0);
     indexer.move(0);
     chassis.turnToHeading(90, 1500);
-    chassis.moveToPose(-31, 51, 90, 1500, {}, false);
+    chassis.moveToPose(-33.5, 51.5, 90, 1500, {}, false);
     bkIntake.move(-127); 
     indexer.move(-127);
     tpIntake.move(127);
     pros::delay(5000);
     tpIntake.move(0);
-    chassis.moveToPose(-45.808, 51, 90, 1000, {.forwards = false});
+    chassis.moveToPose(-45.808, 51.5, 90, 1000, {.forwards = false});
     chassis.turnToHeading(35, 1500);
     chassis.follow(skill4_txt, 20, 5000);
     bkIntake.move(127); 
@@ -314,15 +265,15 @@ void autonThree() {
     chassis.turnToHeading(90, 2500); 
     lwMech.set_value(1);
     //go to loader
-    chassis.moveToPose(68, 47.2, 90, 4000, {}, false);
+    chassis.moveToPose(67.681, 47.25, 90, 4000, {}, false);
     pros::delay(2000);
     //3rd loader
-    chassis.moveToPoint(45.284, 46.7, 1000, {.forwards = false});
+    chassis.moveToPoint(45.284, 48, 1000, {.forwards = false});
     lwMech.set_value(0);
     bkIntake.move(0);
     indexer.move(0);
     chassis.turnToHeading(270, 1500);
-    chassis.moveToPose(31.5, 47, 270, 1500, {}, false);
+    chassis.moveToPose(30.5, 47, 270, 1500, {}, false);
     bkIntake.move(-127); 
     indexer.move(-127);
     tpIntake.move(127);
@@ -331,15 +282,10 @@ void autonThree() {
     chassis.turnToHeading(160, 3000);
     bkIntake.move(127); 
     indexer.move(127);
-    chassis.moveToPose(67, 20, 180, 3000);
-    chassis.turnToHeading(180, 1000, {}, false);
-    odomRetract.set_value(0);
+    chassis.moveToPose(57, 24, 180, 3000);
+    chassis.turnToHeading(180, 1000);
+    hood.set_value(1);
     frIntake.move(-127);
-    leftMotors.move(100);
-    rightMotors.move(100);
-    pros::delay(2000);
-    leftMotors.move(0);
-    rightMotors.move(0);
     /*
     chassis.follow(skill5_txt, 20, 5000);
     chassis.turnToHeading(90, 3000);
@@ -367,26 +313,25 @@ void bRCode(){
     chassis.turnToHeading(90, 2000);
     lwMech.set_value(1);
     chassis.follow(p2AutobR_txt, 20, 1000);
-    tpIntake.move(127);
-    pros::delay(1150);
+    pros::delay(1200);
     chassis.moveToPoint(45.284, 47.5, 1000, {.forwards = false});
     lwMech.set_value(0);
-    chassis.turnToHeading(270, 1200);
-    chassis.moveToPose(29, 48.5, 270, 1500, {}, false);
+    chassis.turnToHeading(270, 1500);
+    chassis.moveToPose(29, 49, 270, 1500, {}, false);
     bkIntake.move(-127); 
     indexer.move(-127);
     tpIntake.move(127);
     pros::delay(3000);
     tpIntake.move(0);
-    chassis.moveToPoint(45.808, 47.5, 1000, {.forwards = false}, false);
-    chassis.turnToHeading(225, 800);
+    chassis.moveToPose(45.808, 47.5, 270, 1000, {.forwards = false});
+    chassis.turnToHeading(225, 1500);
     bkIntake.move(127);
     indexer.move(127);
     chassis.follow(p4AutobR_txt, 20, 4000, true, false); 
     chassis.turnToHeading(220, 500);
     pros::delay(500);
     bkIntake.move(-127);
-    frIntake.move(-107); //tune
+    frIntake.move(-87); //tune
     indexer. move(-127);
     pros::delay(3500);
     chassis.moveToPoint(45.284, 47.5, 1000, {.forwards = false});
@@ -401,12 +346,11 @@ void bLCode(){
     chassis.turnToHeading(90, 2500);
     lwMech.set_value(1);
     chassis.follow(p2AutobL_txt, 15, 1000);
-    tpIntake.move(127);
     pros::delay(1200);
     chassis.moveToPoint(45.284, -47.5, 1000, {.forwards = false});
     lwMech.set_value(0);
     chassis.turnToHeading(270, 1000);
-    chassis.moveToPose(29.25, -48.25, 270, 1500, {}, false);
+    chassis.moveToPose(29.75, -48.5, 270, 1500, {}, false);
     bkIntake.move(-127); 
     indexer.move(-127);
     tpIntake.move(127);
@@ -417,7 +361,7 @@ void bLCode(){
     bkIntake.move(127);
     indexer.move(127);
     chassis.follow(p4AutobL_txt, 20, 5000, true, false); 
-    chassis.turnToHeading(317, 500, {}, false);
+    chassis.turnToHeading(315, 500, {}, false);
     bkIntake.move(-127);
     frIntake.move(127); //tune
     indexer.move(-127);
@@ -428,7 +372,7 @@ void bLCode(){
 
 int autonPage = 0;
 AutonRoutine autons[] = {
-    { "Auton 1", "Red Right Auton. Scores 4 Top 3 Bottom", bLCode},
+    { "Auton 1", "Red Right Auton. Scores 4 Top 3 Bottom", autonThree},
     { "Auton 2", "Red Left Auton. Scores 4 Top 3 Middle", rLCode},
     { "Auton 3", "Skills WIP(54 Max)", autonThree }, 
     {"Auton 4", "Blue Right Auton. Scores 4 Top 3 Bottom, ", bRCode}, 
@@ -495,7 +439,6 @@ void createAutonSelector() {
 
 //INITIALIZATION
 void initialize() {
-    odomRetract.set_value(1);
     //add pros::lcd::initialize(); if lv_init does not work
     lv_init();
     createAutonSelector();
@@ -510,16 +453,13 @@ void initialize() {
 }
 
 //Runs while Disabled
-void disabled() {
-    odomRetract.set_value(1);
-}
+void disabled() {}
 //Runs when connected to field controller
 void competition_initialize() {}
 //Pathing for Path.Jerry.io
 
 //Autonomous Mode(15 and 1 minute here)
 void autonomous() {
-    odomRetract.set_value(1);
     autons[autonPage].run();
 }
 //Driver Control
@@ -530,7 +470,7 @@ void opcontrol() {
     while (true) {
         chassis.setBrakeMode(MOTOR_BRAKE_COAST);
         hue = color.get_hue();
-        if (controller.get_digital(DIGITAL_X)) {
+        if (controller.get_digital(DIGITAL_A) && controller.get_digital(DIGITAL_LEFT)) {
             autonomous();
       }
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
@@ -538,44 +478,6 @@ void opcontrol() {
         // move the chassis with controller
         chassis.arcade(leftY, rightX);
         //Entire Intake/Outtake Sequence with color sort
-        //Pneumatic Control for LW Mech
-        if (controller.get_digital(DIGITAL_Y)){
-            //A controls the extend/retract of the piston
-            if (a==0){
-                a = 1;
-                lwMech.set_value(1);
-                while(controller.get_digital(DIGITAL_Y)){pros::delay(10);}
-            } else if(a == 1){
-                a = 0;
-                lwMech.set_value(0);
-                while(controller.get_digital(DIGITAL_Y)){pros::delay(10);}
-            }
-        }
-        if (controller.get_digital(DIGITAL_RIGHT)){
-            if (b==0){
-                b = 1;
-                odomRetract.set_value(0);
-                while(controller.get_digital(DIGITAL_RIGHT)){pros::delay(10);}
-            } else if(b == 1){
-                b = 0;
-                odomRetract.set_value(1);
-                while(controller.get_digital(DIGITAL_RIGHT)){pros::delay(10);}
-            }
-        }
-        if (controller.get_digital(DIGITAL_B)){
-            toEject = "red";
-            controller.rumble("-.-");
-            while(controller.get_digital(DIGITAL_B)){pros::delay(10);}
-        }
-        if (controller.get_digital(DIGITAL_DOWN)){
-            toEject = "blue";
-            controller.rumble(".");
-            while(controller.get_digital(DIGITAL_DOWN)){pros::delay(10);}
-        }
-        if(controller.get_digital(DIGITAL_LEFT)){
-            pros::Task task2(primestateTask);
-            while(controller.get_digital(DIGITAL_LEFT)){pros::delay(10);}
-        }
         if(controller.get_digital(DIGITAL_R1)){
             //toEject = "red";
             frIntake.move(127);
@@ -603,35 +505,27 @@ void opcontrol() {
             tpIntake.move(127);
             if (!isEjecting) {
                 if ((toEject == "red" && ((hue >= 340 && hue <= 359) || (hue >= 0 && hue <= 20)))){
-                    pros::Task task1(ejectBallTask);
+                // || (toEject == "blue" && (hue >= 200 && hue <= 240))) 
+                    //pros::Task task1(ejectBallTask);
                 }
             }
-            if(!isEjecting) {
-                if(!isEjecting && (toEject == "blue" && (hue >= 200 && hue <= 240))){
-                pros::Task task1(ejectBallTask);
-            }
-            }
-        }else if(controller.get_digital(DIGITAL_A)) {
-            frIntake.move(-127);
-            bkIntake.move(-127);
-            indexer.move(-127);
-            tpIntake.move(127);
         }else{
             frIntake.move(0);
             bkIntake.move(0);
             indexer.move(0);
             tpIntake.move(0);
         }
-        if(controller.get_digital(DIGITAL_UP)){
-            if (c==0){
-                c = 1;
-                toEject = "green";
-                controller.rumble(".");
-                while(controller.get_digital(DIGITAL_UP)){pros::delay(10);}
-            } else if(b == 1){
-                c = 0;
-                toEject = "blue";
-                while(controller.get_digital(DIGITAL_UP)){pros::delay(10);}
+        //Pneumatic Control for LW Mech
+        if (controller.get_digital(DIGITAL_Y)){
+            //A controls the extend/retract of the piston
+            if (a==0){
+                a = 1;
+                lwMech.set_value(1);
+                while(controller.get_digital(DIGITAL_Y)){pros::delay(10);}
+            } else if(a == 1){
+                a = 0;
+                lwMech.set_value(0);
+                while(controller.get_digital(DIGITAL_Y)){pros::delay(10);}
             }
         }
         pros::delay(10);
